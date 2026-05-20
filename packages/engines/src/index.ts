@@ -1,13 +1,10 @@
 import type { EngineAdapter, EngineKey } from './types';
+import { google } from './google';
 
 export * from './types';
 export * from './serialize-helpers';
 
-const adapters: Partial<Record<EngineKey, EngineAdapter>> = {};
-
-export function registerEngine(adapter: EngineAdapter): void {
-  adapters[adapter.key] = adapter;
-}
+const adapters: Partial<Record<EngineKey, EngineAdapter>> = { google };
 
 export function getEngine(key: EngineKey): EngineAdapter {
   const adapter = adapters[key];
@@ -18,3 +15,5 @@ export function getEngine(key: EngineKey): EngineAdapter {
 export function listEngines(): EngineAdapter[] {
   return Object.values(adapters) as EngineAdapter[];
 }
+
+export { google };
