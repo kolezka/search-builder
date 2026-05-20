@@ -19,3 +19,4 @@ export function listEngines(): EngineAdapter[] {
 }
 
 export { google, github, shodan };
+export { validateTree } from './validate-tree';
