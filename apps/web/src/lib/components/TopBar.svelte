@@ -4,9 +4,11 @@
   import { enginesStore } from '$lib/stores/engines';
   import GlassButton from '$lib/ui/GlassButton.svelte';
   import GlassInput from '$lib/ui/GlassInput.svelte';
+  import TemplatePickerModal from './TemplatePickerModal.svelte';
 
   let search = '';
   let menuOpen = false;
+  let templateModalOpen = false;
 
   function go(engine: string) {
     menuOpen = false;
@@ -36,6 +38,7 @@
           {#each $enginesStore as e}
             <button on:click={() => go(e.key)}>{e.name}</button>
           {/each}
+          <button on:click={() => { menuOpen = false; templateModalOpen = true; }}>From template…</button>
         </div>
       {/if}
     </div>
@@ -43,6 +46,10 @@
     <button class="logout" on:click={doLogout} title="Logout">⎋</button>
   </div>
 </header>
+
+{#if templateModalOpen}
+  <TemplatePickerModal on:close={() => (templateModalOpen = false)} />
+{/if}
 
 <style>
   header {
