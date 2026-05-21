@@ -10,6 +10,7 @@ import { healthRoute } from './routes/health';
 import { queriesRoute } from './routes/queries';
 import { statsRoute } from './routes/stats';
 import { tagsRoute } from './routes/tags';
+import { templatesRoute } from './routes/templates';
 
 const app = new Hono();
 
@@ -23,6 +24,7 @@ app.route('/api/queries', queriesRoute);
 app.route('/api/tags', tagsRoute);
 app.route('/api/engines', enginesRoute);
 app.route('/api/stats', statsRoute);
+app.route('/api/templates', templatesRoute);
 
 app.notFound((c) => c.json({ error: 'not_found', code: 'not_found' }, 404));
 app.onError((err, c) => {
