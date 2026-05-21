@@ -1,10 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { api, ApiResponseError } from '$lib/api-client';
+  import { ApiResponseError, api } from '$lib/api-client';
   import { authStore } from '$lib/stores/auth';
   import Glass from '$lib/ui/Glass.svelte';
-  import GlassInput from '$lib/ui/GlassInput.svelte';
   import GlassButton from '$lib/ui/GlassButton.svelte';
+  import GlassInput from '$lib/ui/GlassInput.svelte';
 
   let password = '';
   let error = '';
@@ -39,7 +39,7 @@
     <form on:submit={submit}>
       <label>
         Password
-        <GlassInput type="password" bind:value={password} autocomplete="current-password" />
+        <GlassInput type="password" placeholder="Password" bind:value={password} autocomplete="current-password" />
       </label>
       {#if error}<p class="err">{error}</p>{/if}
       <GlassButton variant="primary" type="submit" disabled={submitting || password.length === 0}>
