@@ -1,0 +1,21 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: docker/postgres.Dockerfile
+    container_name: search-builder-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: search_builder
+    ports:
+      - "5432:5432"
+    volumes:
+      - search_builder_dev_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U search_builder -d search_builder"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  search_builder_dev_pg:
