@@ -4,6 +4,8 @@
   import type { Path } from './node-ops';
   import TermRow from './TermRow.svelte';
   import OperatorRow from './OperatorRow.svelte';
+  import { dndzone, type DndEvent } from 'svelte-dnd-action';
+  import { flip } from 'svelte/animate';
 
   export let node: QueryNode & { type: 'group' };
   export let path: Path = [];
@@ -36,6 +38,19 @@
   function removeMe() {
     builderActions.removeAt(path);
   }
+
+  function items(): Array<QueryNode & { _id: string }> {
+    return node.children.map((c, i) => ({ ...c, _id: `${path.join('.')}/${i}` }));
+  }
+
+  function handleConsider(e: CustomEvent<DndEvent<QueryNode & { _id: string }>>) {
+    const next = e.detail.items.map(({ _id, ...rest }) => rest as QueryNode);
+    builderActions.updateAt(path, (n) => ({ ...(n as typeof node), children: next }));
+  }
+
+  function handleFinalize(e: CustomEvent<DndEvent<QueryNode & { _id: string }>>) {
+    handleConsider(e);
+  }
 </script>
 
 <div class="group" class:root={isRoot}>
@@ -49,15 +64,22 @@
     {/if}
   </header>
 
-  <div class="children">
-    {#each node.children as child, i (path.join('.') + '/' + i)}
-      {#if child.type === 'group'}
-        <svelte:self node={child} path={[...path, i]} isRoot={false} />
-      {:else if child.type === 'term'}
-        <TermRow node={child} path={[...path, i]} />
-      {:else}
-        <OperatorRow node={child} path={[...path, i]} />
-      {/if}
+  <div
+    class="children"
+    use:dndzone={{ items: items(), type: 'group-child', flipDurationMs: 120 }}
+    on:consider={handleConsider}
+    on:finalize={handleFinalize}
+  >
+    {#each items() as child, i (child._id)}
+      <div animate:flip={{ duration: 120 }}>
+        {#if child.type === 'group'}
+          <svelte:self node={child} path={[...path, i]} isRoot={false} />
+        {:else if child.type === 'term'}
+          <TermRow node={child} path={[...path, i]} />
+        {:else}
+          <OperatorRow node={child} path={[...path, i]} />
+        {/if}
+      </div>
     {/each}
   </div>
 
