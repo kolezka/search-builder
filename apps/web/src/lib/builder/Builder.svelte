@@ -5,7 +5,10 @@
   import Group from './Group.svelte';
   import PreviewBar from './PreviewBar.svelte';
   import EngineSwitcher from './EngineSwitcher.svelte';
+  import RawMode from './RawMode.svelte';
   import { builderStore, saveStatus, setField, forceSave, undo, redo } from './store';
+
+  let showRaw = false;
 
   let folders: FolderDto[] = [];
   let tagsText = '';
@@ -72,6 +75,12 @@
       <textarea bind:value={$builderStore.description} on:blur={() => setField('description', $builderStore.description)}></textarea>
     </label>
   </footer>
+  <div class="raw-toggle">
+    <button on:click={() => (showRaw = !showRaw)}>{showRaw ? 'Hide' : 'Show'} raw query</button>
+  </div>
+  {#if showRaw}
+    <RawMode engine={$builderStore.engine} tree={$builderStore.tree} />
+  {/if}
 </section>
 
 <style>
@@ -93,4 +102,9 @@
     background: var(--surface); color: var(--text); border: 1px solid var(--border);
     border-radius: var(--radius-sm); padding: 8px; min-height: 60px; resize: vertical;
   }
+  .raw-toggle { padding: 0 12px; }
+  .raw-toggle button {
+    background: none; border: none; color: var(--text-muted); padding: 6px 0; font-size: 12px;
+  }
+  .raw-toggle button:hover { color: var(--text); }
 </style>
