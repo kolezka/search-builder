@@ -8,8 +8,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
     volumes:
       - search_builder_pg:/var/lib/postgresql/data
-    expose:
-      - "5432"
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U search_builder -d search_builder"]
       interval: 5s
@@ -40,8 +40,12 @@ services:
     expose:
       - "3000"
       - "3001"
+    networks:
+      - internal
+      - coolify
     labels:
       - traefik.enable=true
+      - traefik.docker.network=coolify
       # Web (default route on host)
       - traefik.http.routers.search-builder-web.rule=Host(`${TRAEFIK_HOST:-search-builder.example.com}`)
       - traefik.http.routers.search-builder-web.entrypoints=websecure
@@ -62,6 +66,10 @@ volumes:
   search_builder_pg:
 
 networks:
-  default:
-    name: coolify
+  internal:
+    # Per-stack private network. Postgres lives only here; nothing outside
+    # this compose project can reach it.
+  coolify:
+    # Coolify's shared Traefik network — app joins it so Traefik can route
+    # to it. Postgres is NOT on this network.
     external: true
