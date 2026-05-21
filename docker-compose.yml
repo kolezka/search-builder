@@ -1,0 +1,67 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: docker/postgres.Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - search_builder_pg:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U search_builder -d search_builder"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: search_builder
+      POSTGRES_DB: search_builder
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      INITIAL_PASSWORD: ${INITIAL_PASSWORD:-change-me}
+      SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-https://search-builder.example.com}
+      WEB_ORIGIN: ${WEB_ORIGIN:-https://search-builder.example.com}
+    expose:
+      - "3000"
+      - "3001"
+    labels:
+      - traefik.enable=true
+      # Web (default route on host)
+      - traefik.http.routers.search-builder-web.rule=Host(`${TRAEFIK_HOST:-search-builder.example.com}`)
+      - traefik.http.routers.search-builder-web.entrypoints=websecure
+      - traefik.http.routers.search-builder-web.tls=true
+      - traefik.http.routers.search-builder-web.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.routers.search-builder-web.service=search-builder-web
+      - traefik.http.services.search-builder-web.loadbalancer.server.port=3000
+      # API (under /api with higher priority)
+      - traefik.http.routers.search-builder-api.rule=Host(`${TRAEFIK_HOST:-search-builder.example.com}`) && PathPrefix(`/api`)
+      - traefik.http.routers.search-builder-api.entrypoints=websecure
+      - traefik.http.routers.search-builder-api.tls=true
+      - traefik.http.routers.search-builder-api.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.routers.search-builder-api.service=search-builder-api
+      - traefik.http.routers.search-builder-api.priority=10
+      - traefik.http.services.search-builder-api.loadbalancer.server.port=3001
+
+volumes:
+  search_builder_pg:
+
+networks:
+  default:
+    name: coolify
+    external: true
