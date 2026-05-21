@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { EngineKey, FolderDto } from '@search-builder/types';
+  import type { FolderDto } from '@search-builder/types';
   import { api } from '$lib/api-client';
-  import { enginesStore } from '$lib/stores/engines';
   import GlassInput from '$lib/ui/GlassInput.svelte';
   import Group from './Group.svelte';
   import PreviewBar from './PreviewBar.svelte';
+  import EngineSwitcher from './EngineSwitcher.svelte';
   import { builderStore, saveStatus, setField, forceSave, undo, redo } from './store';
 
   let folders: FolderDto[] = [];
@@ -44,14 +44,7 @@
 
 <section class="builder">
   <header class="topline">
-    <select
-      value={$builderStore.engine}
-      on:change={(e) => setField('engine', (e.target as HTMLSelectElement).value as EngineKey)}
-    >
-      {#each $enginesStore as e}
-        <option value={e.key}>{e.name}</option>
-      {/each}
-    </select>
+    <EngineSwitcher />
     <GlassInput placeholder="Query name…" bind:value={$builderStore.name} on:input={() => setField('name', $builderStore.name)} />
     <select
       value={$builderStore.folder_id ?? ''}
