@@ -1,7 +1,7 @@
-import type { EngineAdapter, EngineKey } from './types';
-import { google } from './google';
 import { github } from './github';
+import { google } from './google';
 import { shodan } from './shodan';
+import type { EngineAdapter, EngineKey } from './types';
 
 export * from './types';
 export * from './serialize-helpers';

@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+const DATABASE_URL =
+  process.env.DATABASE_URL ?? 'postgres://search_builder:search_builder@localhost:5432/search_builder';
+
 export default defineConfig({
   testDir: './tests-e2e',
   fullyParallel: false,
@@ -10,8 +13,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command:
-        'cd ../api && INITIAL_PASSWORD=e2e DB_PATH=./data/e2e.sqlite COOKIE_SECURE=false ALLOWED_ORIGIN=http://localhost:5173 bun src/db/migrate.ts && INITIAL_PASSWORD=e2e DB_PATH=./data/e2e.sqlite COOKIE_SECURE=false ALLOWED_ORIGIN=http://localhost:5173 bun src/server.ts',
+      command: `cd ../api && env DATABASE_URL='${DATABASE_URL}' INITIAL_PASSWORD=e2e COOKIE_SECURE=false ALLOWED_ORIGIN=http://localhost:5173 sh -c 'bun src/db/migrate.ts && exec bun src/server.ts'`,
       url: 'http://localhost:3001/api/health',
       reuseExistingServer: false,
       timeout: 60_000,

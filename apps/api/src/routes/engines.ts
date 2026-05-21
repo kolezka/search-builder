@@ -6,14 +6,14 @@ export const enginesRoute = new Hono();
 enginesRoute.use('*', requireSession);
 
 enginesRoute.get('/', (c) =>
-	c.json(
-		listEngines().map((e) => ({
-			key: e.key,
-			name: e.name,
-			icon: e.icon,
-			baseUrl: e.baseUrl,
-			queryParam: e.queryParam,
-			operators: e.operators,
-		})),
-	),
+  c.json(
+    listEngines().map((e) => ({
+      key: e.key,
+      name: e.name,
+      icon: e.icon,
+      baseUrl: e.baseUrl,
+      queryParam: e.queryParam,
+      operators: e.operators,
+    })),
+  ),
 );

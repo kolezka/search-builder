@@ -1,12 +1,16 @@
 import type { QueryNode } from '@search-builder/types';
-import type { EngineAdapter } from './types';
 import { googleOperators } from './operators/google';
-import { needsQuoting, quote, isEmpty } from './serialize-helpers';
+import { isEmpty, needsQuoting, quote } from './serialize-helpers';
+import type { EngineAdapter } from './types';
 
 function serializeNode(node: QueryNode, isTop: boolean): string {
   if (node.type === 'term') {
     if (node.value.trim() === '') return '';
-    let body = node.exactMatch ? quote(node.value) : needsQuoting(node.value) ? quote(node.value) : node.value;
+    const body = node.exactMatch
+      ? quote(node.value)
+      : needsQuoting(node.value)
+        ? quote(node.value)
+        : node.value;
     return node.negated ? `-${body}` : body;
   }
   if (node.type === 'operator') {

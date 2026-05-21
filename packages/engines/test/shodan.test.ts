@@ -7,8 +7,18 @@ const T = (value: string, opts: Partial<{ exactMatch: boolean; negated: boolean 
   value,
   ...opts,
 });
-const OP = (key: string, value: string, negated = false): QueryNode => ({ type: 'operator', key, value, negated });
-const G = (op: 'AND' | 'OR', children: QueryNode[], negated = false): QueryNode => ({ type: 'group', op, children, negated });
+const OP = (key: string, value: string, negated = false): QueryNode => ({
+  type: 'operator',
+  key,
+  value,
+  negated,
+});
+const G = (op: 'AND' | 'OR', children: QueryNode[], negated = false): QueryNode => ({
+  type: 'group',
+  op,
+  children,
+  negated,
+});
 
 describe('shodan.serializeTree', () => {
   test('operator inline', () => {
@@ -21,13 +31,19 @@ describe('shodan.serializeTree', () => {
     expect(shodan.serializeTree(G('AND', [OP('country', 'CN', true)]))).toBe('-country:CN');
   });
   test('OR group wraps in parens', () => {
-    expect(shodan.serializeTree(G('AND', [G('OR', [OP('port', '3389'), OP('port', '5900')])]))).toBe('(port:3389 OR port:5900)');
+    expect(shodan.serializeTree(G('AND', [G('OR', [OP('port', '3389'), OP('port', '5900')])]))).toBe(
+      '(port:3389 OR port:5900)',
+    );
   });
   test('CVE query', () => {
     expect(shodan.serializeTree(G('AND', [OP('vuln', 'CVE-2021-44228')]))).toBe('vuln:CVE-2021-44228');
   });
   test('complex network search', () => {
-    const tree = G('AND', [OP('country', 'PL'), G('OR', [OP('port', '22'), OP('port', '23')]), OP('has_screenshot', 'true')]);
+    const tree = G('AND', [
+      OP('country', 'PL'),
+      G('OR', [OP('port', '22'), OP('port', '23')]),
+      OP('has_screenshot', 'true'),
+    ]);
     expect(shodan.serializeTree(tree)).toBe('country:PL (port:22 OR port:23) has_screenshot:true');
   });
 });
@@ -35,7 +51,9 @@ describe('shodan.serializeTree', () => {
 describe('shodan.buildUrl', () => {
   test('encodes query', () => {
     const tree = G('AND', [OP('port', '80'), OP('country', 'PL')]);
-    expect(shodan.buildUrl(tree)).toBe(`https://www.shodan.io/search?query=${encodeURIComponent('port:80 country:PL')}`);
+    expect(shodan.buildUrl(tree)).toBe(
+      `https://www.shodan.io/search?query=${encodeURIComponent('port:80 country:PL')}`,
+    );
   });
 });
 

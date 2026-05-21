@@ -1,9 +1,9 @@
 <script lang="ts">
   import '../app.css';
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { authStore, refreshAuth } from '$lib/stores/auth';
+  import { onMount } from 'svelte';
 
   onMount(async () => {
     await refreshAuth();

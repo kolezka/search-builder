@@ -1,7 +1,7 @@
 import type { QueryNode } from '@search-builder/types';
-import type { EngineAdapter } from './types';
 import { githubOperators } from './operators/github';
-import { needsQuoting, quote, isEmpty } from './serialize-helpers';
+import { isEmpty, needsQuoting, quote } from './serialize-helpers';
+import type { EngineAdapter } from './types';
 
 function serializeNode(node: QueryNode, isTop: boolean): string {
   if (node.type === 'term') {

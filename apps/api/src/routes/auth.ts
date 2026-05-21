@@ -1,11 +1,11 @@
-import { Hono } from 'hono';
-import { setCookie, deleteCookie, getCookie } from 'hono/cookie';
 import { changePasswordSchema, loginSchema } from '@search-builder/types';
-import { env } from '../env';
-import { createSession, deleteOtherSessions, deleteSession, getValidSession } from '../auth/sessions';
+import { Hono } from 'hono';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
+import { requireSession } from '../auth/middleware';
 import { setPasswordHash, verifyPassword } from '../auth/password';
 import { rateLimit } from '../auth/rate-limit';
-import { requireSession } from '../auth/middleware';
+import { createSession, deleteOtherSessions, deleteSession, getValidSession } from '../auth/sessions';
+import { env } from '../env';
 
 const loginLimiter = rateLimit({ max: 5, windowMs: 15 * 60 * 1000 });
 
@@ -23,14 +23,10 @@ function cookieOptions() {
 }
 
 authRoute.post('/login', async (c) => {
-  const ip =
-    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? 'unknown';
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? 'unknown';
   const limit = loginLimiter.check(ip);
   if (!limit.allowed) {
-    return c.json(
-      { error: 'too many attempts', code: 'rate_limited', retry_after: limit.retryAfter },
-      429,
-    );
+    return c.json({ error: 'too many attempts', code: 'rate_limited', retry_after: limit.retryAfter }, 429);
   }
   const body = loginSchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success) {

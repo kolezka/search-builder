@@ -1,5 +1,5 @@
-import type { EngineKey, OperatorSpec, QueryNode } from '@search-builder/types';
 import { getEngine } from '@search-builder/engines';
+import type { EngineKey, OperatorSpec, QueryNode } from '@search-builder/types';
 
 export function findIncompatibleOperators(tree: QueryNode, target: EngineKey): string[] {
   const valid = new Set(getEngine(target).operators.map((o: OperatorSpec) => o.key));

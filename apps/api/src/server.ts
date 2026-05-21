@@ -28,12 +28,10 @@ app.route('/api/templates', templatesRoute);
 
 app.notFound((c) => c.json({ error: 'not_found', code: 'not_found' }, 404));
 app.onError((err, c) => {
-	console.error(err);
-	return c.json({ error: 'server_error', code: 'server_error' }, 500);
+  console.error(err);
+  return c.json({ error: 'server_error', code: 'server_error' }, 500);
 });
 
 await bootstrap();
-
-console.log(`[api] listening on http://localhost:${env.PORT}`);
 
 export default { port: env.PORT, fetch: app.fetch };

@@ -256,10 +256,7 @@
       "compositePrimaryKeys": {
         "query_tags_query_id_tag_id_pk": {
           "name": "query_tags_query_id_tag_id_pk",
-          "columns": [
-            "query_id",
-            "tag_id"
-          ]
+          "columns": ["query_id", "tag_id"]
         }
       },
       "uniqueConstraints": {},

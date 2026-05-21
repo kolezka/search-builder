@@ -49,7 +49,10 @@ export function moveNode(root: QueryNode, from: Path, to: Path): QueryNode {
   const parent = getAt(removed, parentPath) as QueryNode & { type: 'group' };
   const newChildren = parent.children.slice();
   newChildren.splice(idx, 0, node);
-  return updateAt(removed, parentPath, (p) => ({ ...(p as { type: 'group'; op: 'AND' | 'OR' }), children: newChildren }));
+  return updateAt(removed, parentPath, (p) => ({
+    ...(p as { type: 'group'; op: 'AND' | 'OR' }),
+    children: newChildren,
+  }));
 }
 
 function adjustPath(target: Path, removed: Path): Path {

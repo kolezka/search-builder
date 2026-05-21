@@ -7,8 +7,18 @@ const T = (value: string, opts: Partial<{ exactMatch: boolean; negated: boolean 
   value,
   ...opts,
 });
-const OP = (key: string, value: string, negated = false): QueryNode => ({ type: 'operator', key, value, negated });
-const G = (op: 'AND' | 'OR', children: QueryNode[], negated = false): QueryNode => ({ type: 'group', op, children, negated });
+const OP = (key: string, value: string, negated = false): QueryNode => ({
+  type: 'operator',
+  key,
+  value,
+  negated,
+});
+const G = (op: 'AND' | 'OR', children: QueryNode[], negated = false): QueryNode => ({
+  type: 'group',
+  op,
+  children,
+  negated,
+});
 
 describe('google.serializeTree', () => {
   test('single term', () => {
@@ -36,9 +46,9 @@ describe('google.serializeTree', () => {
   });
 
   test('OR group is parenthesised', () => {
-    expect(
-      google.serializeTree(G('AND', [G('OR', [OP('intitle', 'admin'), OP('intitle', 'login')])])),
-    ).toBe('(intitle:admin OR intitle:login)');
+    expect(google.serializeTree(G('AND', [G('OR', [OP('intitle', 'admin'), OP('intitle', 'login')])]))).toBe(
+      '(intitle:admin OR intitle:login)',
+    );
   });
 
   test('nested AND inside top AND inlines without extra parens', () => {
@@ -50,9 +60,9 @@ describe('google.serializeTree', () => {
   });
 
   test('AROUND renders specially when used between two terms in same group', () => {
-    expect(
-      google.serializeTree(G('AND', [T('claude'), OP('AROUND', '3'), T('anthropic')])),
-    ).toBe('claude AROUND(3) anthropic');
+    expect(google.serializeTree(G('AND', [T('claude'), OP('AROUND', '3'), T('anthropic')]))).toBe(
+      'claude AROUND(3) anthropic',
+    );
   });
 
   test('complex realistic query', () => {

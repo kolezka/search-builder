@@ -7,8 +7,18 @@ const T = (value: string, opts: Partial<{ exactMatch: boolean; negated: boolean 
   value,
   ...opts,
 });
-const OP = (key: string, value: string, negated = false): QueryNode => ({ type: 'operator', key, value, negated });
-const G = (op: 'AND' | 'OR', children: QueryNode[], negated = false): QueryNode => ({ type: 'group', op, children, negated });
+const OP = (key: string, value: string, negated = false): QueryNode => ({
+  type: 'operator',
+  key,
+  value,
+  negated,
+});
+const G = (op: 'AND' | 'OR', children: QueryNode[], negated = false): QueryNode => ({
+  type: 'group',
+  op,
+  children,
+  negated,
+});
 
 describe('github.serializeTree', () => {
   test('terms AND-joined by space', () => {

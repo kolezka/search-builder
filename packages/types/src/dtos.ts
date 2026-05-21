@@ -3,7 +3,10 @@ import { engineKeySchema, queryNodeSchema } from './query-tree';
 
 export const folderCreateSchema = z.object({
   name: z.string().min(1).max(120),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
 });
 export const folderUpdateSchema = folderCreateSchema.partial();
 export type FolderCreate = z.infer<typeof folderCreateSchema>;
