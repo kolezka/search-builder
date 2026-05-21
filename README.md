@@ -13,25 +13,59 @@ Single-user, self-hosted web app for composing boolean search queries against Go
 - Single password auth; password change in settings
 
 ## Stack
-Bun monorepo · Hono + Drizzle + SQLite (bun:sqlite) · SvelteKit · Biome · Playwright · Docker · Coolify
+Bun monorepo · Hono + Drizzle + Postgres (postgres-js) on Coolify behind Traefik · SvelteKit · Biome · Playwright · Docker
 
 ## Local dev
 
+Start only the database with Docker, then run the app processes directly:
+
 ````bash
+docker compose -f docker-compose.dev.yml up -d
 bun install
-cp apps/api/.env.example apps/api/.env  # set INITIAL_PASSWORD
-cd apps/api && bun src/db/migrate.ts && cd -
-bun run dev:api &
+cd apps/api && DATABASE_URL=postgres://search_builder:search_builder@localhost:5432/search_builder bun src/db/migrate.ts && cd -
+INITIAL_PASSWORD=dev bun run dev:api &
 bun run dev:web
 ````
 
-Then open http://localhost:5173 and log in.
+Then open http://localhost:5173 and log in with password `dev`.
+
+The dev compose file provides Postgres on `localhost:5432` with user/db `search_builder` and password `search_builder`.
+
+## Database configuration
+
+The API accepts either a full `DATABASE_URL` or individual `POSTGRES_*` variables:
+
+| Variable | Default | Notes |
+|---|---|---|
+| `DATABASE_URL` | — | Full connection string; overrides all POSTGRES_* vars when set |
+| `POSTGRES_HOST` | `postgres` | Service name in compose network |
+| `POSTGRES_PORT` | `5432` | |
+| `POSTGRES_USER` | `search_builder` | Baked into custom pg image — no need to set |
+| `POSTGRES_PASSWORD` | *(required)* | Only secret; set in Coolify env tab |
+| `POSTGRES_DB` | `search_builder` | Baked into custom pg image — no need to set |
+
+The custom Postgres image (`docker/postgres.Dockerfile`) bakes `POSTGRES_USER` and `POSTGRES_DB` as constants so they don't appear as editable fields in Coolify's env UI — only `POSTGRES_PASSWORD` needs to be set there.
 
 ## Deploy (Coolify)
-1. Add this repo as a Docker Compose application in Coolify pointing at `compose.yaml`.
-2. Set env vars: `INITIAL_PASSWORD`, `ALLOWED_ORIGIN`, `WEB_ORIGIN`, optionally `COOKIE_DOMAIN`.
-3. Mount the named volume `search_builder_data` to `/data`.
-4. Deploy. On first boot the password hash is seeded from `INITIAL_PASSWORD`; subsequent boots ignore the env var.
+
+1. Add this repo as a Docker Compose application in Coolify pointing at `docker-compose.yml`.
+2. Set the following env vars in the Coolify env tab:
+
+   | Variable | Required | Example |
+   |---|---|---|
+   | `POSTGRES_PASSWORD` | yes | `hunter2` |
+   | `INITIAL_PASSWORD` | yes (first boot) | `hunter2` |
+   | `ALLOWED_ORIGIN` | yes | `https://search-builder.example.com` |
+   | `WEB_ORIGIN` | yes | `https://search-builder.example.com` |
+   | `TRAEFIK_HOST` | yes | `search-builder.example.com` |
+   | `COOKIE_DOMAIN` | optional | `.example.com` |
+   | `TRAEFIK_CERT_RESOLVER` | optional | `letsencrypt` |
+   | `SESSION_TTL_DAYS` | optional | `30` |
+   | `COOKIE_SECURE` | optional | `true` |
+
+3. The app service joins the `coolify` external Docker network so Traefik can reach it via labels.
+4. Deploy. On first boot the password hash is seeded from `INITIAL_PASSWORD`; subsequent boots ignore it.
+5. Traefik routes `/api` prefix to port 3001 (API) and everything else to port 3000 (web), both on the same host.
 
 ## Known limitations (MVP)
 - **Drag-and-drop & empty groups under Svelte 5**: svelte-dnd-action 0.9.x has reactivity gaps under Svelte 5. Adding a child to a freshly-empty group via store mutation may not appear until the dndzone re-evaluates. Workaround: start from a template, or reload the builder after adding the first item. To be addressed by switching to a Svelte 5-native DnD library.
