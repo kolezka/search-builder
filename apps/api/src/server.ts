@@ -4,6 +4,7 @@ import { logger } from 'hono/logger';
 import { env } from './env';
 import { bootstrap } from './db/bootstrap';
 import { healthRoute } from './routes/health';
+import { authRoute } from './routes/auth';
 
 const app = new Hono();
 
@@ -11,6 +12,7 @@ app.use('*', logger());
 app.use('*', cors({ origin: env.ALLOWED_ORIGIN, credentials: true }));
 
 app.route('/api/health', healthRoute);
+app.route('/api/auth', authRoute);
 
 app.notFound((c) => c.json({ error: 'not_found', code: 'not_found' }, 404));
 app.onError((err, c) => {
