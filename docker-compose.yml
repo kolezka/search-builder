@@ -43,24 +43,6 @@ services:
     networks:
       - internal
       - coolify
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=coolify
-      # Web (default route on host)
-      - traefik.http.routers.search-builder-web.rule=Host(`${TRAEFIK_HOST:-search-builder.example.com}`)
-      - traefik.http.routers.search-builder-web.entrypoints=websecure
-      - traefik.http.routers.search-builder-web.tls=true
-      - traefik.http.routers.search-builder-web.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
-      - traefik.http.routers.search-builder-web.service=search-builder-web
-      - traefik.http.services.search-builder-web.loadbalancer.server.port=3000
-      # API (under /api with higher priority)
-      - traefik.http.routers.search-builder-api.rule=Host(`${TRAEFIK_HOST:-search-builder.example.com}`) && PathPrefix(`/api`)
-      - traefik.http.routers.search-builder-api.entrypoints=websecure
-      - traefik.http.routers.search-builder-api.tls=true
-      - traefik.http.routers.search-builder-api.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
-      - traefik.http.routers.search-builder-api.service=search-builder-api
-      - traefik.http.routers.search-builder-api.priority=10
-      - traefik.http.services.search-builder-api.loadbalancer.server.port=3001
 
 volumes:
   search_builder_pg:

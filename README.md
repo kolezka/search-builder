@@ -57,15 +57,13 @@ The custom Postgres image (`docker/postgres.Dockerfile`) bakes `POSTGRES_USER` a
    | `INITIAL_PASSWORD` | yes (first boot) | `hunter2` |
    | `ALLOWED_ORIGIN` | yes | `https://search-builder.example.com` |
    | `WEB_ORIGIN` | yes | `https://search-builder.example.com` |
-   | `TRAEFIK_HOST` | yes | `search-builder.example.com` |
    | `COOKIE_DOMAIN` | optional | `.example.com` |
-   | `TRAEFIK_CERT_RESOLVER` | optional | `letsencrypt` |
    | `SESSION_TTL_DAYS` | optional | `30` |
    | `COOKIE_SECURE` | optional | `true` |
 
-3. The app service joins the `coolify` external Docker network so Traefik can reach it via labels.
-4. Deploy. On first boot the password hash is seeded from `INITIAL_PASSWORD`; subsequent boots ignore it.
-5. Traefik routes `/api` prefix to port 3001 (API) and everything else to port 3000 (web), both on the same host.
+3. In Coolify's app settings, set the public domain and map it to port `3000` (web). Configure a second domain or a path-based rule for `/api` → port `3001` (API). Coolify generates Traefik labels for you based on those settings; the compose file deliberately ships without `traefik.*` labels so Coolify owns routing.
+4. The app service joins the external `coolify` Docker network so Coolify's Traefik can reach it.
+5. Deploy. On first boot the password hash is seeded from `INITIAL_PASSWORD`; subsequent boots ignore it.
 
 ## Known limitations (MVP)
 - **Drag-and-drop & empty groups under Svelte 5**: svelte-dnd-action 0.9.x has reactivity gaps under Svelte 5. Adding a child to a freshly-empty group via store mutation may not appear until the dndzone re-evaluates. Workaround: start from a template, or reload the builder after adding the first item. To be addressed by switching to a Svelte 5-native DnD library.
