@@ -4,9 +4,12 @@ import { logger } from 'hono/logger';
 import { bootstrap } from './db/bootstrap';
 import { env } from './env';
 import { authRoute } from './routes/auth';
+import { enginesRoute } from './routes/engines';
 import { foldersRoute } from './routes/folders';
 import { healthRoute } from './routes/health';
 import { queriesRoute } from './routes/queries';
+import { statsRoute } from './routes/stats';
+import { tagsRoute } from './routes/tags';
 
 const app = new Hono();
 
@@ -17,6 +20,9 @@ app.route('/api/health', healthRoute);
 app.route('/api/auth', authRoute);
 app.route('/api/folders', foldersRoute);
 app.route('/api/queries', queriesRoute);
+app.route('/api/tags', tagsRoute);
+app.route('/api/engines', enginesRoute);
+app.route('/api/stats', statsRoute);
 
 app.notFound((c) => c.json({ error: 'not_found', code: 'not_found' }, 404));
 app.onError((err, c) => {
