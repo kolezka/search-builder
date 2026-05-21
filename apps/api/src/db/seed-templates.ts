@@ -100,8 +100,8 @@ const SEEDS: Seed[] = [
 
 export async function seedTemplates(): Promise<void> {
 	const db = getDb();
-	const [{ c }] = await db.select({ c: sql<number>`COUNT(*)` }).from(templates);
-	if (c > 0) return;
+	const [{ c }] = await db.select({ c: sql<string>`COUNT(*)` }).from(templates);
+	if (Number(c) > 0) return;
 	const now = Date.now();
 	await db.insert(templates).values(
 		SEEDS.map((s) => ({

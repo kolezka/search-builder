@@ -10,12 +10,12 @@ export async function listFolders(): Promise<FolderDto[]> {
 			id: folders.id,
 			name: folders.name,
 			color: folders.color,
-			query_count: sql<number>`(SELECT COUNT(*) FROM ${queries} WHERE ${queries.folder_id} = ${folders.id} AND ${queries.deleted_at} IS NULL)`,
+			query_count: sql<string>`(SELECT COUNT(*) FROM ${queries} WHERE ${queries.folder_id} = ${folders.id} AND ${queries.deleted_at} IS NULL)`,
 		})
 		.from(folders)
 		.where(isNull(folders.deleted_at))
 		.orderBy(folders.name);
-	return rows.map((r) => ({ id: r.id, name: r.name, color: r.color ?? null, query_count: r.query_count }));
+	return rows.map((r) => ({ id: r.id, name: r.name, color: r.color ?? null, query_count: Number(r.query_count) }));
 }
 
 export async function createFolder(input: { name: string; color?: string }): Promise<{ id: string }> {

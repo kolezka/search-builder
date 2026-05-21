@@ -20,7 +20,7 @@ export async function instantiateTemplate(
 	id: string,
 	opts: { name?: string; folder_id?: string | null },
 ): Promise<{ id: string } | null> {
-	const row = await getDb().select().from(templates).where(eq(templates.id, id)).get();
+	const [row] = await getDb().select().from(templates).where(eq(templates.id, id)).limit(1);
 	if (!row) return null;
 	return createQuery({
 		name: opts.name ?? row.name,

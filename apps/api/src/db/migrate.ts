@@ -1,6 +1,7 @@
-import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
-import { getDb } from './client';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { closeDb, getDb } from './client';
 
-migrate(getDb(), { migrationsFolder: './src/db/migrations' });
+await migrate(getDb(), { migrationsFolder: './src/db/migrations' });
 console.log('Migrations applied');
+await closeDb();
 process.exit(0);

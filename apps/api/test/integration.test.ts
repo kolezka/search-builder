@@ -1,8 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { cleanupDb, freshDb } from './setup';
+import { TEST_DB_URL, cleanupDb, freshDb } from './setup';
 
-const TEST_DB = './data/integration-test.sqlite';
-process.env.DB_PATH = TEST_DB;
+process.env.DATABASE_URL = TEST_DB_URL;
 process.env.INITIAL_PASSWORD = 'pw';
 process.env.COOKIE_SECURE = 'false';
 
@@ -10,7 +9,7 @@ let app: { fetch: (req: Request) => Promise<Response> };
 let cookie = '';
 
 beforeAll(async () => {
-	await freshDb(TEST_DB);
+	await freshDb();
 	const boot = await import(`../src/db/bootstrap.ts?t=${Date.now()}`);
 	await boot.bootstrap();
 	const mod = await import(`../src/server.ts?t=${Date.now()}`);
@@ -26,7 +25,7 @@ beforeAll(async () => {
 	cookie = res.headers.get('set-cookie')!.split(';')[0];
 });
 
-afterAll(() => cleanupDb(TEST_DB));
+afterAll(() => cleanupDb());
 
 async function api(path: string, init: RequestInit = {}) {
 	return app.fetch(

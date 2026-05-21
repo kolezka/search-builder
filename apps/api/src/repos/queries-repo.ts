@@ -31,7 +31,7 @@ export async function listQueries(filter: ListFilter): Promise<QueryListDto[]> {
 
 	let tagId: string | null = null;
 	if (filter.tag) {
-		const tagRow = await db.select().from(tags).where(eq(tags.name, filter.tag)).get();
+		const [tagRow] = await db.select().from(tags).where(eq(tags.name, filter.tag)).limit(1);
 		if (!tagRow) return [];
 		tagId = tagRow.id;
 	}
@@ -88,7 +88,7 @@ export async function listQueries(filter: ListFilter): Promise<QueryListDto[]> {
 }
 
 export async function getQuery(id: string): Promise<QueryFullDto | null> {
-	const row = await getDb().select().from(queries).where(eq(queries.id, id)).get();
+	const [row] = await getDb().select().from(queries).where(eq(queries.id, id)).limit(1);
 	if (!row) return null;
 	const tagNames = await getTagsForQuery(id);
 	return {
@@ -131,7 +131,7 @@ export async function createQuery(input: QueryCreate): Promise<{ id: string }> {
 }
 
 export async function updateQuery(id: string, patch: QueryUpdate): Promise<boolean> {
-	const existing = await getDb().select().from(queries).where(eq(queries.id, id)).get();
+	const [existing] = await getDb().select().from(queries).where(eq(queries.id, id)).limit(1);
 	if (!existing || existing.deleted_at) return false;
 	if (patch.tree) {
 		const engine = (patch.engine ?? existing.engine) as EngineKey;

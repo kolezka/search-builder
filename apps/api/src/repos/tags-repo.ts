@@ -5,14 +5,15 @@ import { getDb } from '../db/client';
 import { queryTags, tags } from '../db/schema';
 
 export async function listTags(): Promise<TagDto[]> {
-	return getDb()
+	const rows = await getDb()
 		.select({
 			id: tags.id,
 			name: tags.name,
-			usage_count: sql<number>`(SELECT COUNT(*) FROM ${queryTags} WHERE ${queryTags.tag_id} = ${tags.id})`,
+			usage_count: sql<string>`(SELECT COUNT(*) FROM ${queryTags} WHERE ${queryTags.tag_id} = ${tags.id})`,
 		})
 		.from(tags)
 		.orderBy(desc(sql`usage_count`), tags.name);
+	return rows.map((r) => ({ ...r, usage_count: Number(r.usage_count) }));
 }
 
 export async function deleteTag(id: string): Promise<boolean> {

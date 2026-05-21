@@ -7,7 +7,7 @@ import { seedTemplates } from './seed-templates';
 
 export async function bootstrap(): Promise<void> {
 	const db = getDb();
-	const existing = await db.select().from(appConfig).where(eq(appConfig.key, 'password_hash')).get();
+	const [existing] = await db.select().from(appConfig).where(eq(appConfig.key, 'password_hash')).limit(1);
 	if (existing) return;
 	if (!env.INITIAL_PASSWORD) {
 		throw new Error('password_hash missing and INITIAL_PASSWORD not set — cannot boot');
