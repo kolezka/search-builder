@@ -1,0 +1,32 @@
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+import { env } from './env';
+import { authRoute } from './routes/auth';
+import { enginesRoute } from './routes/engines';
+import { foldersRoute } from './routes/folders';
+import { healthRoute } from './routes/health';
+import { queriesRoute } from './routes/queries';
+import { statsRoute } from './routes/stats';
+import { tagsRoute } from './routes/tags';
+import { templatesRoute } from './routes/templates';
+
+export const app = new Hono();
+
+app.use('*', logger());
+app.use('*', cors({ origin: env.ALLOWED_ORIGIN, credentials: true }));
+
+app.route('/api/health', healthRoute);
+app.route('/api/auth', authRoute);
+app.route('/api/folders', foldersRoute);
+app.route('/api/queries', queriesRoute);
+app.route('/api/tags', tagsRoute);
+app.route('/api/engines', enginesRoute);
+app.route('/api/stats', statsRoute);
+app.route('/api/templates', templatesRoute);
+
+app.notFound((c) => c.json({ error: 'not_found', code: 'not_found' }, 404));
+app.onError((err, c) => {
+  console.error(err);
+  return c.json({ error: 'server_error', code: 'server_error' }, 500);
+});

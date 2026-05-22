@@ -7,11 +7,10 @@ services:
     container_name: search-builder-pg
     restart: unless-stopped
     environment:
-      # POSTGRES_USER=search_builder and POSTGRES_DB=search_builder are baked
-      # into the custom image (docker/postgres.Dockerfile) so they don't
-      # surface in Coolify's env tab as "deletable but required" constants.
-      # Only the password ever needs to be configured by the operator.
-      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your env}'
+      # POSTGRES_USER=search_builder and POSTGRES_DB=search_builder are
+      # baked into the custom image (docker/postgres.Dockerfile) so the
+      # operator only ever sets the password in Coolify's env tab.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - 'app-pg:/var/lib/postgresql/data'
     healthcheck:
@@ -23,26 +22,28 @@ services:
       retries: 10
       start_period: 10s
 
-  api:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-      target: api-runtime
-    image: 'search-builder-api:latest'
-    container_name: search-builder-api
+    image: 'search-builder:latest'
+    container_name: search-builder
     restart: unless-stopped
-    # No expose, no SERVICE_FQDN — the API is internal-only. The web
-    # service reaches it server-side on the compose network via
-    # http://api:3001 (see API_INTERNAL_URL below).
+    expose:
+      - '3000'
     environment:
-      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your env}'
-      INITIAL_PASSWORD: '${INITIAL_PASSWORD:?Set INITIAL_PASSWORD in your env (seeds the bcrypt hash on first boot)}'
-      SESSION_TTL_DAYS: '${SESSION_TTL_DAYS:-30}'
-      COOKIE_SECURE: '${COOKIE_SECURE:-true}'
-      # Cookies are set by responses proxied through SvelteKit, so the
-      # browser scopes them to the web FQDN automatically. Leave Domain
-      # unset.
-      COOKIE_DOMAIN: '${COOKIE_DOMAIN:-}'
+      # Declaring SERVICE_FQDN_APP_3000 (with the port suffix) tells Coolify
+      # to route the generated public FQDN to container port 3000. Coolify
+      # then exposes SERVICE_URL_APP (full https URL, no port) which we
+      # feed to adapter-node as ORIGIN.
+      SERVICE_FQDN_APP_3000:
+      ORIGIN: ${SERVICE_URL_APP}
+      ALLOWED_ORIGIN: ${SERVICE_URL_APP}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      INITIAL_PASSWORD: ${INITIAL_PASSWORD}
+      SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,34 +52,11 @@ services:
         - CMD
         - bun
         - -e
-        - "fetch('http://127.0.0.1:3001/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+        - "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
       interval: 60s
       timeout: 10s
       retries: 3
       start_period: 30s
-
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: web-runtime
-    image: 'search-builder-web:latest'
-    container_name: search-builder-web
-    restart: unless-stopped
-    expose:
-      - '3000'
-    environment:
-      SERVICE_FQDN_WEB_3000:
-      # Adapter-node reads ORIGIN to validate the Host header; must match
-      # the public URL the browser uses.
-      ORIGIN: '${SERVICE_FQDN_WEB_3000}'
-      # Server-side base URL used by hooks.server.ts to proxy /api/* to
-      # the api container on the internal compose network. Never reaches
-      # the browser.
-      API_INTERNAL_URL: 'http://api:3001'
-    depends_on:
-      api:
-        condition: service_healthy
 
 volumes:
   app-pg:

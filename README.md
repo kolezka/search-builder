@@ -48,7 +48,7 @@ The custom Postgres image (`docker/postgres.Dockerfile`) bakes `POSTGRES_USER` a
 
 ## Deploy (Coolify)
 
-The stack ships three services: `postgres` (private), `api` (private, port 3001) and `web` (public, port 3000). Only the web service gets a public FQDN — the browser hits it on `/` for the UI and on `/api/*` for API calls, and SvelteKit's `hooks.server.ts` proxies `/api/*` server-side to the api container on the internal compose network. No CORS, no second domain.
+The stack ships two services: `postgres` (private) and `app` (public, port 3000). The `app` container runs a single Node process — SvelteKit's adapter-node serves the UI and a catch-all `/api/[...path]/+server.ts` route delegates to a Hono instance mounted in-process. No separate api container, no internal port, no CORS.
 
 1. Add this repo as a Docker Compose application in Coolify pointing at `docker-compose.yml`.
 2. Set the following env vars in the Coolify env tab:
@@ -61,9 +61,9 @@ The stack ships three services: `postgres` (private), `api` (private, port 3001)
    | `SESSION_TTL_DAYS` | optional | `30` |
    | `COOKIE_SECURE` | optional | `true` |
 
-   `SERVICE_FQDN_WEB_3000` is injected by Coolify (auto-generated, or set a custom domain in the app's Domains tab); the compose substitutes it into `ORIGIN` so adapter-node validates the Host header.
+   `SERVICE_FQDN_APP_3000` is injected by Coolify (auto-generated, or set a custom domain in the app's Domains tab); the compose substitutes `SERVICE_URL_APP` into `ORIGIN`/`ALLOWED_ORIGIN`.
 
-3. Deploy. On first boot the password hash is seeded from `INITIAL_PASSWORD`; subsequent boots ignore it.
+3. Deploy. The entrypoint runs `bun apps/api/src/db/migrate.ts` before `node apps/web/build/index.js` starts. On first boot the password hash is seeded from `INITIAL_PASSWORD`; subsequent boots ignore it.
 
 ## Known limitations (MVP)
 - **Drag-and-drop & empty groups under Svelte 5**: svelte-dnd-action 0.9.x has reactivity gaps under Svelte 5. Adding a child to a freshly-empty group via store mutation may not appear until the dndzone re-evaluates. Workaround: start from a template, or reload the builder after adding the first item. To be addressed by switching to a Svelte 5-native DnD library.

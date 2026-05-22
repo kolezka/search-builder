@@ -32,6 +32,7 @@
       "name": "@search-builder/web",
       "version": "0.0.0",
       "dependencies": {
+        "@search-builder/api": "workspace:*",
         "@search-builder/engines": "workspace:*",
         "@search-builder/types": "workspace:*",
         "svelte-dnd-action": "^0.9.50",

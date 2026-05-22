@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@search-builder/api": "workspace:*",
     "@search-builder/types": "workspace:*",
     "@search-builder/engines": "workspace:*",
     "svelte-dnd-action": "^0.9.50"
