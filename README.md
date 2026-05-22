@@ -13,7 +13,7 @@ Single-user, self-hosted web app for composing boolean search queries against Go
 - Single password auth; password change in settings
 
 ## Stack
-Bun monorepo · Hono + Drizzle + Postgres (postgres-js) on Coolify behind Traefik · SvelteKit · Biome · Playwright · Docker
+Bun monorepo · Hono + Drizzle + Postgres (postgres-js) · SvelteKit (adapter-node) · Biome · Playwright · Docker · Coolify
 
 ## Local dev
 
@@ -48,6 +48,8 @@ The custom Postgres image (`docker/postgres.Dockerfile`) bakes `POSTGRES_USER` a
 
 ## Deploy (Coolify)
 
+The stack ships three services: `postgres` (private), `api` (private, port 3001) and `web` (public, port 3000). Only the web service gets a public FQDN — the browser hits it on `/` for the UI and on `/api/*` for API calls, and SvelteKit's `hooks.server.ts` proxies `/api/*` server-side to the api container on the internal compose network. No CORS, no second domain.
+
 1. Add this repo as a Docker Compose application in Coolify pointing at `docker-compose.yml`.
 2. Set the following env vars in the Coolify env tab:
 
@@ -55,15 +57,13 @@ The custom Postgres image (`docker/postgres.Dockerfile`) bakes `POSTGRES_USER` a
    |---|---|---|
    | `POSTGRES_PASSWORD` | yes | `hunter2` |
    | `INITIAL_PASSWORD` | yes (first boot) | `hunter2` |
-   | `ALLOWED_ORIGIN` | yes | `https://search-builder.example.com` |
-   | `WEB_ORIGIN` | yes | `https://search-builder.example.com` |
    | `COOKIE_DOMAIN` | optional | `.example.com` |
    | `SESSION_TTL_DAYS` | optional | `30` |
    | `COOKIE_SECURE` | optional | `true` |
 
-3. In Coolify's app settings, set the public domain and map it to port `3000` (web). Configure a second domain or a path-based rule for `/api` → port `3001` (API). Coolify generates Traefik labels for you based on those settings; the compose file deliberately ships without `traefik.*` labels so Coolify owns routing.
-4. The app service joins the external `coolify` Docker network so Coolify's Traefik can reach it.
-5. Deploy. On first boot the password hash is seeded from `INITIAL_PASSWORD`; subsequent boots ignore it.
+   `SERVICE_FQDN_WEB_3000` is injected by Coolify (auto-generated, or set a custom domain in the app's Domains tab); the compose substitutes it into `ORIGIN` so adapter-node validates the Host header.
+
+3. Deploy. On first boot the password hash is seeded from `INITIAL_PASSWORD`; subsequent boots ignore it.
 
 ## Known limitations (MVP)
 - **Drag-and-drop & empty groups under Svelte 5**: svelte-dnd-action 0.9.x has reactivity gaps under Svelte 5. Adding a child to a freshly-empty group via store mutation may not appear until the dndzone re-evaluates. Workaround: start from a template, or reload the builder after adding the first item. To be addressed by switching to a Svelte 5-native DnD library.

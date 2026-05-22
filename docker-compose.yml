@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/postgres.Dockerfile
-    image: search-builder-pg:latest
+    image: 'search-builder-pg:latest'
     container_name: search-builder-pg
     restart: unless-stopped
     environment:
@@ -11,11 +11,13 @@ services:
       # into the custom image (docker/postgres.Dockerfile) so they don't
       # surface in Coolify's env tab as "deletable but required" constants.
       # Only the password ever needs to be configured by the operator.
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your env}'
     volumes:
-      - app-pg:/var/lib/postgresql/data
+      - 'app-pg:/var/lib/postgresql/data'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U search_builder -d search_builder']
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U search_builder -d search_builder'
       interval: 10s
       timeout: 5s
       retries: 10
@@ -26,29 +28,21 @@ services:
       context: .
       dockerfile: Dockerfile
       target: api-runtime
-    image: search-builder-api:latest
+    image: 'search-builder-api:latest'
     container_name: search-builder-api
     restart: unless-stopped
-    # No host-port mapping — Coolify's reverse proxy talks to the container
-    # directly on the compose network. Declaring SERVICE_FQDN_API_3001 below
-    # tells Coolify to assign a domain to port 3001 (operator can override
-    # with a custom FQDN in the Coolify UI).
-    expose:
-      - '3001'
+    # No expose, no SERVICE_FQDN — the API is internal-only. The web
+    # service reaches it server-side on the compose network via
+    # http://api:3001 (see API_INTERNAL_URL below).
     environment:
-      SERVICE_FQDN_API_3001:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      INITIAL_PASSWORD: ${INITIAL_PASSWORD}
-      # Cross-origin from the web FQDN — both share the same parent domain,
-      # so SameSite=Lax cookies (set by hono/cookie) are accepted by the
-      # browser on app→api fetches.
-      ALLOWED_ORIGIN: ${SERVICE_FQDN_WEB_3000}
-      SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
-      COOKIE_SECURE: ${COOKIE_SECURE:-true}
-      # Leave COOKIE_DOMAIN unset to scope the session cookie to the API
-      # host. Set it to ".parent-domain.tld" only if you also want the
-      # cookie readable from the web origin (not required for this app).
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your env}'
+      INITIAL_PASSWORD: '${INITIAL_PASSWORD:?Set INITIAL_PASSWORD in your env (seeds the bcrypt hash on first boot)}'
+      SESSION_TTL_DAYS: '${SESSION_TTL_DAYS:-30}'
+      COOKIE_SECURE: '${COOKIE_SECURE:-true}'
+      # Cookies are set by responses proxied through SvelteKit, so the
+      # browser scopes them to the web FQDN automatically. Leave Domain
+      # unset.
+      COOKIE_DOMAIN: '${COOKIE_DOMAIN:-}'
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,7 +62,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: web-runtime
-    image: search-builder-web:latest
+    image: 'search-builder-web:latest'
     container_name: search-builder-web
     restart: unless-stopped
     expose:
@@ -77,10 +71,11 @@ services:
       SERVICE_FQDN_WEB_3000:
       # Adapter-node reads ORIGIN to validate the Host header; must match
       # the public URL the browser uses.
-      ORIGIN: ${SERVICE_FQDN_WEB_3000}
-      # Browser-visible base URL for API calls. Empty in dev (Vite proxy
-      # handles /api/*); set to the api FQDN in production.
-      PUBLIC_API_BASE: ${SERVICE_FQDN_API_3001}
+      ORIGIN: '${SERVICE_FQDN_WEB_3000}'
+      # Server-side base URL used by hooks.server.ts to proxy /api/* to
+      # the api container on the internal compose network. Never reaches
+      # the browser.
+      API_INTERNAL_URL: 'http://api:3001'
     depends_on:
       api:
         condition: service_healthy
