@@ -11,7 +11,7 @@ services:
       # into the custom image (docker/postgres.Dockerfile) so they don't
       # surface in Coolify's env tab as "deletable but required" constants.
       # Only the password ever needs to be configured by the operator.
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - app-pg:/var/lib/postgresql/data
     healthcheck:
@@ -40,13 +40,13 @@ services:
       # match this compose file. NODE_ENV / PORT are pinned in the
       # Dockerfile / env schema. Keeping this list short means Coolify's
       # env tab stays free of redundant constants.
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your env}
-      INITIAL_PASSWORD: ${INITIAL_PASSWORD:?Set INITIAL_PASSWORD in your env (seeds the bcrypt hash on first boot)}
-      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:?Set ALLOWED_ORIGIN in your env (e.g. https://search-builder.example.com)}
-      WEB_ORIGIN: ${WEB_ORIGIN:?Set WEB_ORIGIN in your env (e.g. https://search-builder.example.com)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      INITIAL_PASSWORD: ${INITIAL_PASSWORD}
+      ALLOWED_ORIGIN: ${SERVICE_URL_APP}
+      WEB_ORIGIN: ${SERVICE_URL_APP}
       SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      COOKIE_DOMAIN: ${SERVICE_URL_APP}
     depends_on:
       postgres:
         condition: service_healthy
