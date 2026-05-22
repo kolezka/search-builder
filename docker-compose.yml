@@ -21,32 +21,34 @@ services:
       retries: 10
       start_period: 10s
 
-  app:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-    image: search-builder:latest
-    container_name: search-builder
+      target: api-runtime
+    image: search-builder-api:latest
+    container_name: search-builder-api
     restart: unless-stopped
     # No host-port mapping — Coolify's reverse proxy talks to the container
-    # directly on the compose network. `expose` documents the contract and
-    # mirrors EXPOSE 3000 3001 in the Dockerfile (web on 3000, api on 3001).
+    # directly on the compose network. Declaring SERVICE_FQDN_API_3001 below
+    # tells Coolify to assign a domain to port 3001 (operator can override
+    # with a custom FQDN in the Coolify UI).
     expose:
-      - '3000'
       - '3001'
     environment:
-      # Only the values that operators actually configure. Postgres host /
-      # user / db / port have schema defaults in apps/api/src/env.ts that
-      # match this compose file. NODE_ENV / PORT are pinned in the
-      # Dockerfile / env schema. Keeping this list short means Coolify's
-      # env tab stays free of redundant constants.
+      SERVICE_FQDN_API_3001:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       INITIAL_PASSWORD: ${INITIAL_PASSWORD}
-      ALLOWED_ORIGIN: ${SERVICE_URL_APP}
-      WEB_ORIGIN: ${SERVICE_URL_APP}
+      # Cross-origin from the web FQDN — both share the same parent domain,
+      # so SameSite=Lax cookies (set by hono/cookie) are accepted by the
+      # browser on app→api fetches.
+      ALLOWED_ORIGIN: ${SERVICE_FQDN_WEB_3000}
       SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
-      COOKIE_DOMAIN: ${SERVICE_URL_APP}
+      # Leave COOKIE_DOMAIN unset to scope the session cookie to the API
+      # host. Set it to ".parent-domain.tld" only if you also want the
+      # cookie readable from the web origin (not required for this app).
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,6 +62,28 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web-runtime
+    image: search-builder-web:latest
+    container_name: search-builder-web
+    restart: unless-stopped
+    expose:
+      - '3000'
+    environment:
+      SERVICE_FQDN_WEB_3000:
+      # Adapter-node reads ORIGIN to validate the Host header; must match
+      # the public URL the browser uses.
+      ORIGIN: ${SERVICE_FQDN_WEB_3000}
+      # Browser-visible base URL for API calls. Empty in dev (Vite proxy
+      # handles /api/*); set to the api FQDN in production.
+      PUBLIC_API_BASE: ${SERVICE_FQDN_API_3001}
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   app-pg:

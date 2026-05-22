@@ -1,3 +1,4 @@
+import { env as publicEnv } from '$env/dynamic/public';
 import type {
   EngineKey,
   FolderDto,
@@ -11,8 +12,10 @@ import type {
 } from '@search-builder/types';
 import { type ApiError, ApiResponseError } from './types';
 
+const API_BASE = (publicEnv.PUBLIC_API_BASE ?? '').replace(/\/$/, '');
+
 async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: { 'content-type': 'application/json', ...(init.headers as Record<string, string>) },
     credentials: 'include',
